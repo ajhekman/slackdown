@@ -23,34 +23,23 @@ local image_mime_type = ({
 
 -- Character escaping
 local function escape(s, in_attribute)
-  return s:gsub("[<>&\"']",
-    function(x)
-      if x == '<' then
-        return '&lt;'
-      elseif x == '>' then
-        return '&gt;'
-      elseif x == '&' then
-        return '&amp;'
-      elseif x == '"' then
-        return '&quot;'
-      elseif x == "'" then
-        return '&#39;'
-      else
-        return x
-      end
-    end)
-end
-
--- Helper function to convert an attributes table into
--- a string that can be put into HTML tags.
-local function attributes(attr)
-  local attr_table = {}
-  for x,y in pairs(attr) do
-    if y and y ~= "" then
-      table.insert(attr_table, ' ' .. x .. '="' .. escape(y,true) .. '"')
-    end
-  end
-  return table.concat(attr_table)
+  -- return s:gsub("[<>&\"']",
+  --   function(x)
+  --     if x == '<' then
+  --       return '&lt;'
+  --     elseif x == '>' then
+  --       return '&gt;'
+  --     elseif x == '&' then
+  --       return '&amp;'
+  --     elseif x == '"' then
+  --       return '&quot;'
+  --     elseif x == "'" then
+  --       return '&#39;'
+  --     else
+  --       return x
+  --     end
+  --   end)
+  return s
 end
 
 -- Table to store footnotes, so they can be included at the end.
@@ -83,6 +72,10 @@ function Doc(body, metadata, variables)
   return table.concat(buffer,'\n') .. '\n'
 end
 
+function LeftTrim(s)
+  return s:match( "^%s*(.+)" )
+end
+
 -- The functions that follow render corresponding pandoc elements.
 -- s is always a string, attr is always a table of attributes, and
 -- items is always an array of strings (the items in a list).
@@ -101,7 +94,7 @@ function SoftBreak()
 end
 
 function LineBreak()
-  return "<br/>"
+  return "\n"
 end
 
 function Emph(s)
@@ -112,31 +105,16 @@ function Strong(s)
   return "*" .. s .. "*"
 end
 
-function Subscript(s)
-  return "<sub>" .. s .. "</sub>"
-end
-
-function Superscript(s)
-  return "<sup>" .. s .. "</sup>"
-end
-
-function SmallCaps(s)
-  return '<span style="font-variant: small-caps;">' .. s .. '</span>'
-end
-
 function Strikeout(s)
   return '~' .. s .. '~'
 end
 
 function Link(s, src, tit, attr)
-  -- return "<a href='" .. escape(src,true) .. "' title='" ..
-        --  escape(tit,true) .. "'>" .. s .. "</a>"
   return "["..s.."]("..src..")"
 end
 
 function Image(s, src, tit, attr)
-  return "<img src='" .. escape(src,true) .. "' title='" ..
-         escape(tit,true) .. "'/>"
+  return "![]("..src..")"
 end
 
 function Code(s, attr)
@@ -161,13 +139,13 @@ function Plain(s)
 end
 
 function Para(s)
-  -- choosing to not add a linebreak here, as it tends to add too much whitespace
+  -- choosing to not add a linebreak here, as it tends to add too much
+  -- whitespace
   return s
 end
 
 -- lev is an integer, the header level.
 function Header(lev, s, attr)
-  -- return "<h" .. lev .. attributes(attr) ..  ">" .. s .. "</h" .. lev .. ">"
   return "*" .. s  .. "*"
 end
 
@@ -176,17 +154,8 @@ function BlockQuote(s)
   return ">  " .. string.gsub(left_trim_s, "\n", "\n>  ")
 end
 
-function LeftTrim(s)
-  return s:match( "^%s*(.+)" )
-end
-
 function HorizontalRule()
   return "------------------------"
-end
-
-function LineBlock(ls)
-  return '<div style="white-space: pre-line;">' .. table.concat(ls, '\n') ..
-         '</div>'
 end
 
 function CodeBlock(s, attr)
@@ -219,83 +188,52 @@ end
 --   return "<dl>\n" .. table.concat(buffer, "\n") .. "\n</dl>"
 -- end
 
--- Convert pandoc alignment to something HTML can use.
--- align is AlignLeft, AlignRight, AlignCenter, or AlignDefault.
--- function html_align(align)
---   if align == 'AlignLeft' then
---     return 'left'
---   elseif align == 'AlignRight' then
---     return 'right'
---   elseif align == 'AlignCenter' then
---     return 'center'
---   else
---     return 'left'
---   end
--- end
-
--- function CaptionedImage(src, tit, caption, attr)
---    return '<div class="figure">\n<img src="' .. escape(src,true) ..
---       '" title="' .. escape(tit,true) .. '"/>\n' ..
---       '<p class="caption">' .. caption .. '</p>\n</div>'
--- end
-
 -- Caption is a string, aligns is an array of strings,
 -- widths is an array of floats, headers is an array of
 -- strings, rows is an array of arrays of strings.
--- function Table(caption, aligns, widths, headers, rows)
---   local buffer = {}
---   local function add(s)
---     table.insert(buffer, s)
---   end
---   add("<table>")
---   if caption ~= "" then
---     add("<caption>" .. caption .. "</caption>")
---   end
---   if widths and widths[1] ~= 0 then
---     for _, w in pairs(widths) do
---       add('<col width="' .. string.format("%.0f%%", w * 100) .. '" />')
---     end
---   end
---   local header_row = {}
---   local empty_header = true
---   for i, h in pairs(headers) do
---     local align = html_align(aligns[i])
---     table.insert(header_row,'<th align="' .. align .. '">' .. h .. '</th>')
---     empty_header = empty_header and h == ""
---   end
---   if empty_header then
---     head = ""
---   else
---     add('<tr class="header">')
---     for _,h in pairs(header_row) do
---       add(h)
---     end
---     add('</tr>')
---   end
---   local class = "even"
---   for _, row in pairs(rows) do
---     class = (class == "even" and "odd") or "even"
---     add('<tr class="' .. class .. '">')
---     for i,c in pairs(row) do
---       add('<td align="' .. html_align(aligns[i]) .. '">' .. c .. '</td>')
---     end
---     add('</tr>')
---   end
---   add('</table>')
---   return table.concat(buffer,'\n')
--- end
-
--- function RawBlock(format, str)
---   if format == "html" then
---     return str
---   else
---     return ''
---   end
--- end
-
--- function Div(s, attr)
---   return "<div" .. attributes(attr) .. ">\n" .. s .. "</div>"
--- end
+function Table(caption, aligns, widths, headers, rows)
+  return ":warning: *Tables not supported"
+  -- local buffer = {}
+  -- local function add(s)
+  --   table.insert(buffer, s)
+  -- end
+  -- add("<table>")
+  -- if caption ~= "" then
+  --   add("<caption>" .. caption .. "</caption>")
+  -- end
+  -- if widths and widths[1] ~= 0 then
+  --   for _, w in pairs(widths) do
+  --     add('<col width="' .. string.format("%.0f%%", w * 100) .. '" />')
+  --   end
+  -- end
+  -- local header_row = {}
+  -- local empty_header = true
+  -- for i, h in pairs(headers) do
+  --   local align = html_align(aligns[i])
+  --   table.insert(header_row,'<th align="' .. align .. '">' .. h .. '</th>')
+  --   empty_header = empty_header and h == ""
+  -- end
+  -- if empty_header then
+  --   head = ""
+  -- else
+  --   add('<tr class="header">')
+  --   for _,h in pairs(header_row) do
+  --     add(h)
+  --   end
+  --   add('</tr>')
+  -- end
+  -- local class = "even"
+  -- for _, row in pairs(rows) do
+  --   class = (class == "even" and "odd") or "even"
+  --   add('<tr class="' .. class .. '">')
+  --   for i,c in pairs(row) do
+  --     add('<td align="' .. html_align(aligns[i]) .. '">' .. c .. '</td>')
+  --   end
+  --   add('</tr>')
+  -- end
+  -- add('</table>')
+  -- return table.concat(buffer,'\n')
+end
 
 -- The following code will produce runtime warnings when you haven't defined
 -- all of the functions you need for the custom writer, so it's useful

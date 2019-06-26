@@ -2,6 +2,12 @@
 ## Heading2
 ### Heading3
 
+| example |  table |  header |
+|---------|--------|---------|
+| cells   |  are   |  below  |
+| 1       | 2      | 3       |
+
+
 **bold**
 
 _italics_
