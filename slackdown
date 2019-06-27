@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -euo pipefail
+IFS=$'\n\t'
+
+pbpaste | pandoc -f gfm -t lib/slack_doc.lua | pbcopy
+
+echo "Slack formatted text copied to clipboard" >&2
