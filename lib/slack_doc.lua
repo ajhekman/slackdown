@@ -63,13 +63,10 @@ function Doc(body, metadata, variables)
   end
   add(body)
   if #notes > 0 then
-    add('<ol class="footnotes">')
-    for _,note in pairs(notes) do
-      add(note)
-    end
-    add('</ol>')
+    add(HorizontalRule())
+    add(OrderedList(notes))
   end
-  return table.concat(buffer,'\n') .. '\n'
+  return table.concat(buffer,'\n')
 end
 
 function LeftTrim(s)
@@ -110,7 +107,10 @@ function Strikeout(s)
 end
 
 function Link(s, src, tit, attr)
-  return "["..s.."]("..src..")"
+  if s == src then
+    return src
+  end
+  return Note("["..s.."]("..src..")")
 end
 
 function Image(s, src, tit, attr)
@@ -124,14 +124,10 @@ end
 
 function Note(s)
   local num = #notes + 1
-  -- insert the back reference right before the final closing tag.
-  s = string.gsub(s,
-          '(.*)</', '%1 <a href="#fnref' .. num ..  '">&#8617;</a></')
-  -- add a list item with the note to the note table.
-  table.insert(notes, '<li id="fn' .. num .. '">' .. s .. '</li>')
-  -- return the footnote reference, linked to the note.
-  return '<a id="fnref' .. num .. '" href="#fn' .. num ..
-            '"><sup>' .. num .. '</sup></a>'
+  b = string.gsub(s, '%[(.*)%]%((.*)%)', '`%1` : %2')
+  table.insert(notes, b)
+
+  return string.gsub(s, '%[(.*)%]%((.*)%)', '`<%1>').."#"..num.."`"
 end
 
 function Plain(s)

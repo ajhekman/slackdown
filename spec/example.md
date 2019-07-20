@@ -14,7 +14,8 @@ _italics_
 
 ~~strikethrough~~
 
-[link text](https://example.com/url)
+[link text with title](https://example.com/url)
+https://example.com/link-without-title
 
 - - - -
 
